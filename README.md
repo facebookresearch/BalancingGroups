@@ -4,22 +4,23 @@ Code to replicate the experimental results from [Simple data balancing baselines
 
 ## Replicating the main results
 
-### Download and extract datasets
+### Installing dependencies
 
-* [Waterbirds](https://nlp.stanford.edu/data/dro/waterbird_complete95_forest2water2.tar.gz) to `$DATASETS_PATH/waterbirds`
-* [CelebA](https://www.kaggle.com/jessicali9530/celeba-dataset) to `$DATASETS_PATH/celeba`
-* [CivilComments](https://worksheets.codalab.org/rest/bundles/0x8cd3de0634154aeaad2ee6eb96723c6e/contents/blob/) to `$DATASETS_PATH/civilcomments`
-* [MultiNLI](https://github.com/kohpangwei/group_DRO#multinli-with-annotated-negations) to `$DATASETS_PATH/multinli`
-
-### Generate dataset metadata
+Easiest way to have a working environment for this repo is to create a conda environement with the following commands
 
 ```bash
-cd metadata/
-python generate_metadata_waterbirds.py
-python generate_metadata_celeba.py
-python generate_metadata_civilcomments.py
-python generate_metadata_multinli.py
-cd ..
+conda env create -f environment.yaml
+conda activate balancinggroups
+```	
+
+If conda is not available, please install the dependencies listed in the requirements.txt file.
+
+### Download, extract and Generate metadata for datasets
+
+This script downloads, extracts and formats the datasets metadata so that it works with the rest of the code out of the box.
+
+```bash
+python setup_datasets.py --download --data_path data
 ```
 
 ### Launch jobs
@@ -27,13 +28,17 @@ cd ..
 ```bash
 # Launching 1400 combo seeds = 50 hparams for 4 datasets for 7 algorithms
 # Each combo seed is ran 5 times to compute error bars, totalling 7000 jobs
-./train.py --output_dir main_sweep --num_hparams_seeds 1400 
+python train.py --data_path data --output_dir main_sweep --num_hparams_seeds 1400 --num_init_seeds 5
 ```
 
 ### Parse results
 
+The parse.py script can generate all of the plots and tables from the paper. 
+By default, it generates the best test worst-group-accuracy table for each dataset/method.
+This script can be called while the experiments are still running. 
+
 ```bash
-./parse.py main_sweep
+python parse.py main_sweep
 ```
 
 ## License

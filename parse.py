@@ -87,13 +87,11 @@ def final_latex_table(final_df, df, do_anova, col_to_show):
     template_begining = (
         r"""
     \begin{tabular}{lllccccc}
-    \toprule
-        \textbf{Method} & \textbf{\#HP} & \textbf{Groups} & \multicolumn{4}{c}{\textbf{"""
-        + col_to_show
-        + r"""}} & \textbf{Average} \\
-        \cmidrule(lr){4-7}
-        &&&CelebA &  Waterbirds & MultiNLI & CivilComments & \\
-        \midrule
+                \toprule
+                \textbf{Method} & \textbf{\#HP} & \textbf{Groups} & \multicolumn{4}{c}{\textbf{Worst Acc}} & \textbf{Average}                                                                                                          \\
+                \cmidrule(lr){4-7}
+                                &               &                 & CelebA                                 & Waterbirds       & MultiNLI                                       & CivilComments                                  &      \\
+                \midrule
     """
     )
     middle = r""
@@ -103,7 +101,7 @@ def final_latex_table(final_df, df, do_anova, col_to_show):
         for dataset in ["CelebA", "Waterbirds", "MultiNLI", "CivilComments"]:
             if do_anova:
                 if df.loc[(dataset, row["Method"])]["Signif Diff"].item():
-                    row[dataset] = "\cellcolor[rgb]{0.898,0.973,0.898}" + str(
+                    row[dataset] = "\cellcolor{blue!7}" + str(
                         row[dataset]
                     )
         if row["Groups"] != last_group and last_group is not None:
@@ -323,10 +321,6 @@ def plot_min_acc_evol(best_df, all_runs, filename):
         facet_kws=dict(sharex=False, sharey=False, margin_titles=True),
         alpha=0.7,
     )
-    # g.fig.get_axes()[-1].legend(
-    #     loc="lower center",
-    #     ncol=4,
-    # )
     g.set_axis_labels("epoch", "worst-group-acc")
     g.set_titles(row_template="Groups = {row_name}", col_template="{col_name}")
     # g.add_legend(loc="lower center", ncol=4)
@@ -415,12 +409,15 @@ def format_time_results(df_all_epochs, unique_run_id):
     plt.savefig(f"figures/time_per_epoch.pdf", dpi=300)
     plt.savefig(f"figures/time_per_epoch.png", dpi=300)
 
-def plot_min_acc_dist(df, run_groups):
+
+def plot_min_acc_dist(df, run_groups, n):
     dfs = []
     for idx, _ in df.iterrows():
         dfs.append(run_groups.get_group(idx)["min_acc_te"])
-    df = pd.concat(dfs).sort_index(level='Groups').reset_index()
-
+    df = pd.concat(dfs).sort_index(level="Groups")
+    df = df.reindex(
+        ["CelebA", "Waterbirds", "MultiNLI", "CivilComments"], level="dataset"
+    ).reset_index()
     sns.set(style="whitegrid", context="talk", font="Times New Roman")
     g = sns.catplot(
         data=df,
@@ -437,23 +434,17 @@ def plot_min_acc_dist(df, run_groups):
     g.set_axis_labels("Method", "worst-group-acc")
     g.set_titles(col_template="{col_name}")
     g.tight_layout()
-    plt.savefig(f"figures/worst_group_acc_dist_dataset.pdf", dpi=300)
-    plt.savefig(f"figures/worst_group_acc_dist_dataset.png", dpi=300)
+    plt.savefig(f"figures/worst_group_acc_dist_dataset_{n}.pdf", dpi=300)
+    plt.savefig(f"figures/worst_group_acc_dist_dataset_{n}.png", dpi=300)
 
     plt.figure()
-    g = sns.catplot(
-        data=df,
-        x="method",
-        y="min_acc_te",
-        kind="box",
-        height=5.5,
-    )
+    g = sns.catplot(data=df, x="method", y="min_acc_te", kind="box", height=5.5)
     for ax in g.fig.axes:
         ax.tick_params(axis="x", labelrotation=45)
     g.set_axis_labels("Method", "worst-group-acc")
     g.tight_layout()
-    plt.savefig(f"figures/worst_group_acc_dist.pdf", dpi=300)
-    plt.savefig(f"figures/worst_group_acc_dist.png", dpi=300)
+    plt.savefig(f"figures/worst_group_acc_dist_{n}.pdf", dpi=300)
+    plt.savefig(f"figures/worst_group_acc_dist_{n}.png", dpi=300)
 
 
 def print_unfinished_runs(dir):
@@ -571,4 +562,4 @@ if __name__ == "__main__":
             "worst_acc_evol" if args.n == 1 else f"worst_acc_evol_mean{args.n}",
         )
     elif args.mode == "plot_min_acc_dist":
-        plot_min_acc_dist(df, run_groups)
+        plot_min_acc_dist(df, run_groups, args.n)

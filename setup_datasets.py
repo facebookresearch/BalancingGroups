@@ -36,11 +36,11 @@ def download_and_extract(url, dst, remove=True):
         os.remove(dst)
 
 
-def download_datasets(data_dir):
-    os.makedirs(data_dir, exist_ok=True)
+def download_datasets(data_path):
+    os.makedirs(data_path, exist_ok=True)
 
     logging.info("Downloading CelebA")
-    celeba_dir = os.path.join(data_dir, "celeba")
+    celeba_dir = os.path.join(data_path, "celeba")
     os.makedirs(celeba_dir, exist_ok=True)
     download_and_extract(
         "https://drive.google.com/uc?id=1mb1R6dXfWbvk3DnlWOBO8pDeoBKOcLE6",
@@ -58,7 +58,7 @@ def download_datasets(data_dir):
     )
 
     logging.info("Downloading Waterbirds")
-    water_birds_dir = os.path.join(data_dir, "waterbirds")
+    water_birds_dir = os.path.join(data_path, "waterbirds")
     os.makedirs(water_birds_dir, exist_ok=True)
     water_birds_dir_tar = os.path.join(water_birds_dir, "waterbirds.tar.gz")
     download_and_extract(
@@ -67,7 +67,7 @@ def download_datasets(data_dir):
     )
 
     logging.info("Downloading MultiNLI")
-    multinli_dir = os.path.join(data_dir, "multinli")
+    multinli_dir = os.path.join(data_path, "multinli")
     glue_dir = os.path.join(multinli_dir, "glue_data/MNLI/")
     os.makedirs(glue_dir, exist_ok=True)
     multinli_tar = os.path.join(glue_dir, "multinli_bert_features.tar.gz")
@@ -83,7 +83,7 @@ def download_datasets(data_dir):
     )
 
     logging.info("Downloading CivilComments")
-    civilcomments_dir = os.path.join(data_dir, "civilcomments")
+    civilcomments_dir = os.path.join(data_path, "civilcomments")
     os.makedirs(civilcomments_dir, exist_ok=True)
     download_and_extract(
         "https://worksheets.codalab.org/rest/bundles/0x8cd3de0634154aeaad2ee6eb96723c6e/contents/blob/",
@@ -180,10 +180,10 @@ def generate_metadata_civilcomments(data_path):
         )
 
 
-def generate_metadata_multinli(data_dir):
+def generate_metadata_multinli(data_path):
     logging.info("Generating metadata for multinli")
     df = pd.read_csv(
-        os.path.join(data_dir, "multinli", "data", "metadata_random.csv"), index_col=0
+        os.path.join(data_path, "multinli", "data", "metadata_random.csv"), index_col=0
     )
 
     df = df.rename(columns={"gold_label": "y", "sentence2_has_negation": "a"})
@@ -192,13 +192,13 @@ def generate_metadata_multinli(data_dir):
     df = df.reset_index()
     df["filename"] = df["id"]
     df = df.reset_index()[["id", "filename", "split", "y", "a"]]
-    df.to_csv(os.path.join(data_dir, "metadata_multinli.csv"), index=False)
+    df.to_csv(os.path.join(data_path, "metadata_multinli.csv"), index=False)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize repo with datasets")
     parser.add_argument(
-        "--data_dir",
+        "--data_path",
         default="data",
         type=str,
         help="Root directory to store datasets",
@@ -211,8 +211,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.download:
-        download_datasets(args.data_dir)
-    generate_metadata_celeba(args.data_dir)
-    generate_metadata_waterbirds(args.data_dir)
-    generate_metadata_civilcomments(args.data_dir)
-    generate_metadata_multinli(args.data_dir)
+        download_datasets(args.data_path)
+    generate_metadata_celeba(args.data_path)
+    generate_metadata_waterbirds(args.data_path)
+    generate_metadata_civilcomments(args.data_path)
+    generate_metadata_multinli(args.data_path)

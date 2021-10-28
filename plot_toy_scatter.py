@@ -198,12 +198,8 @@ if __name__ == "__main__":
     groups = df.groupby(
         ["lr", "weight_decay", "batch_size", "gamma_spu", "gamma_core", "gamma_noise"]
     )
-    for lr, wd, gm in tqdm(
-        list(itertools.product([1e-6], [0.1], [20.0]))
-    ):
+    for (lr, wd, bs, gms, gmc, gmn), g_df in groups:
         plot(
-            *get_ploting_params(
-                groups.get_group((lr, wd, 250) + (gammas[0], gammas[1], gm))
-            ),
-            filename=f"toy_sweep_lr_{lr}_wd_{wd}_gm_{gm}",
+            *get_ploting_params(g_df),
+            filename=f"toy_sweep_lr_{lr}_wd_{wd}_bs_{bs}_gms_{gms}_gmc_{gmc}_gmn_{gmn}",
         )
