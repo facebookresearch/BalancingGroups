@@ -25,11 +25,15 @@ python setup_datasets.py --download --data_path data
 
 ### Launch jobs
 
+To reproduce the experiments in the paper on a SLURM cluster :
+
 ```bash
 # Launching 1400 combo seeds = 50 hparams for 4 datasets for 7 algorithms
 # Each combo seed is ran 5 times to compute error bars, totalling 7000 jobs
-python train.py --data_path data --output_dir main_sweep --num_hparams_seeds 1400 --num_init_seeds 5
+python train.py --data_path data --output_dir main_sweep --num_hparams_seeds 1400 --num_init_seeds 5 --partition <slurm_partition>
 ```
+
+If you want to run the jobs localy, omit the --partition argument.
 
 ### Parse results
 

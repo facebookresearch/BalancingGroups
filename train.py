@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, default='outputs')
     parser.add_argument('--slurm_output_dir', type=str, default='slurm_outputs')
     parser.add_argument('--data_path', type=str, default='data')
-    parser.add_argument('--partition', type=str, default="learnlab")
+    parser.add_argument('--slurm_partition', type=str, default=None)
     parser.add_argument('--max_time', type=int, default=3*24*60)
     parser.add_argument('--num_hparams_seeds', type=int, default=20)
     parser.add_argument('--num_init_seeds', type=int, default=5)
@@ -120,14 +120,6 @@ def run_experiment(args):
 if __name__ == "__main__":
     args = parse_args()
 
-    executor = submitit.SlurmExecutor(folder=args['slurm_output_dir'])
-    executor.update_parameters(
-        time=args["max_time"],
-        gpus_per_node=1,
-        array_parallelism=512,
-        cpus_per_task=4,
-        partition=args["partition"])
-
     commands = []
     for hparams_seed in range(args["num_hparams_seeds"]):
         torch.manual_seed(hparams_seed)
@@ -170,4 +162,17 @@ if __name__ == "__main__":
     os.makedirs(args["output_dir"], exist_ok=True)
     torch.manual_seed(0)
     commands = [commands[int(p)] for p in torch.randperm(len(commands))]
-    executor.map_array(run_experiment, commands)
+
+    if args['slurm_partition'] is not None:
+        executor = submitit.SlurmExecutor(folder=args['slurm_output_dir'])
+        executor.update_parameters(
+            time=args["max_time"],
+            gpus_per_node=1,
+            array_parallelism=512,
+            cpus_per_task=4,
+            partition=args["slurm_partition"])
+        executor.map_array(run_experiment, commands)
+    else:
+        for command in commands:
+            run_experiment(command)
+    
