@@ -22,11 +22,7 @@ class GroupDataset:
         df = df[df["split"] == ({"tr": 0, "va": 1, "te": 2}[split])]
 
         self.i = list(range(len(df)))
-        if root:
-            self.x = df["filename"].map(lambda x: os.path.join(root, x)).tolist()
-        else:
-            self.x = df["filename"].astype(str).tolist()
-        
+        self.x = df["filename"].astype(str).map(lambda x: os.path.join(root, x)).tolist()
         self.y = df["y"].tolist()
         self.g = df["a"].tolist()
 
@@ -126,7 +122,7 @@ class Waterbirds(GroupDataset):
 
 class CelebA(GroupDataset):
     def __init__(self, data_path, split, subsample_what=None, duplicates=None):
-        root = os.path.join(data_path, "celeba/img_align_celeba/img_align_celeba/")
+        root = os.path.join(data_path, "celeba/img_align_celeba/")
         metadata = os.path.join(data_path,"metadata_celeba.csv")
 
         transform = transforms.Compose(

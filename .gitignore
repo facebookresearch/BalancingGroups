@@ -1,1 +1,4 @@
 data
+slurm_outputs
+debug
+*.pyc

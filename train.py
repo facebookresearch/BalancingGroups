@@ -41,8 +41,9 @@ def parse_args():
     parser.add_argument('--data_path', type=str, default='data')
     parser.add_argument('--partition', type=str, default="learnlab")
     parser.add_argument('--max_time', type=int, default=3*24*60)
-    parser.add_argument('--num_hparams_seeds', type=int, default=50)
+    parser.add_argument('--num_hparams_seeds', type=int, default=20)
     parser.add_argument('--num_init_seeds', type=int, default=5)
+    parser.add_argument('--selector', type=str, default='min_acc_va')
     return vars(parser.parse_args())
 
 
