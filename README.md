@@ -4,13 +4,6 @@ Code to replicate the experimental results from [Simple data balancing baselines
 
 ## Replicating the main results
 
-### Set environment variables
-
-```bash
-export DATASETS_PATH=/path/to/datasets
-export SLURM_PATH=/path/to/slurm/logs
-```
-
 ### Download and extract datasets
 
 * [Waterbirds](https://nlp.stanford.edu/data/dro/waterbird_complete95_forest2water2.tar.gz) to `$DATASETS_PATH/waterbirds`

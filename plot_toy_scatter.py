@@ -90,22 +90,6 @@ def plot(
             vmax=vmax,
             extend="both"
         )
-        # cbar = plt.colorbar(p, ax=ax, orientation="horizontal")
-        # cbar.set_ticks([vmin, vmax])
-        # cbar.set_ticklabels([f"{vmin:.2f}", f"{vmax:.2f}"])
-        # ax.contour(
-        #     hmp_x,
-        #     hmp_y,
-        #     hma[i],
-        #     np.linspace(vmin, vmax, 20),
-        #     antialiased=True,
-        #     linewidths=0.2,
-        #     colors="k",
-        #     alpha=0.5,
-        #     vmin=vmin,
-        #     vmax=vmax,
-        #     extend="both",
-        # )
         ax.contour(
             hmp_x, hmp_y, hma[i], [0.5], antialiased=True, linewidths=1.0, colors="k"
         )

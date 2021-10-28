@@ -36,10 +36,12 @@ def randl(l_):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Balancing baselines')
-    parser.add_argument('--output_dir', type=str, required=True)
+    parser.add_argument('--output_dir', type=str, default='outputs')
+    parser.add_argument('--slurm_output_dir', type=str, default='slurm_outputs')
+    parser.add_argument('--data_path', type=str, default='data')
     parser.add_argument('--partition', type=str, default="learnlab")
     parser.add_argument('--max_time', type=int, default=3*24*60)
-    parser.add_argument('--num_hparams_seeds', type=int, default=20)
+    parser.add_argument('--num_hparams_seeds', type=int, default=50)
     parser.add_argument('--num_init_seeds', type=int, default=5)
     return vars(parser.parse_args())
 
@@ -48,7 +50,7 @@ def run_experiment(args):
     start_time = time.time()
     torch.manual_seed(args["init_seed"])
     np.random.seed(args["init_seed"])
-    loaders = get_loaders(args["dataset"], args["batch_size"], args["method"])
+    loaders = get_loaders(args["data_path"], args["dataset"], args["batch_size"], args["method"])
 
     sys.stdout = Tee(os.path.join(
         args["output_dir"], 'seed_{}_{}.out'.format(
@@ -84,6 +86,7 @@ def run_experiment(args):
     for epoch in range(last_epoch, args["num_epochs"]):
         if epoch == args["T"] + 1 and args["method"] == "jtt":
             loaders = get_loaders(
+                args["data_path"],
                 args["dataset"],
                 args["batch_size"],
                 args["method"],
@@ -116,7 +119,7 @@ def run_experiment(args):
 if __name__ == "__main__":
     args = parse_args()
 
-    executor = submitit.SlurmExecutor(folder=os.environ['SLURM_PATH'])
+    executor = submitit.SlurmExecutor(folder=args['slurm_output_dir'])
     executor.update_parameters(
         time=args["max_time"],
         gpus_per_node=1,
