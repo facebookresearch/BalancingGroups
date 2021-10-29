@@ -10,30 +10,21 @@ from torchvision import transforms
 from transformers import BertTokenizer
 from torch.utils.data import DataLoader
 from sklearn.datasets import make_blobs
+import pandas as pd
 
 
 class GroupDataset:
     def __init__(
-            self, split, root, metadata, transform,
-            subsample_what=None, duplicates=None):
+        self, split, root, metadata, transform, subsample_what=None, duplicates=None
+    ):
         self.transform_ = transform
-        with open(metadata, "r") as f:
-            lines = f.readlines()
+        df = pd.read_csv(metadata)
+        df = df[df["split"] == ({"tr": 0, "va": 1, "te": 2}[split])]
 
-        self.i, self.x, self.y, self.g = [], [], [], []
-
-        i = 0
-        for line in lines:
-            _, fname, yi, si, gi, _ = line.split(",")
-
-            if (split == "tr" and si == "0") or\
-               (split == "va" and si == "1") or\
-               (split == "te" and si == "2"):
-                self.x.append(os.path.join(root, fname))
-                self.y.append(int(yi))
-                self.g.append(int(gi))
-                self.i.append(i)
-                i += 1
+        self.i = list(range(len(df)))
+        self.x = df["filename"].astype(str).map(lambda x: os.path.join(root, x)).tolist()
+        self.y = df["y"].tolist()
+        self.g = df["a"].tolist()
 
         self.count_groups()
 
@@ -57,8 +48,8 @@ class GroupDataset:
 
         for i in self.i:
             self.wg.append(
-                len(self) /
-                self.group_sizes[self.nb_groups * self.y[i] + self.g[i]])
+                len(self) / self.group_sizes[self.nb_groups * self.y[i] + self.g[i]]
+            )
             self.wy.append(len(self) / self.class_sizes[self.y[i]])
 
     def subsample_(self, subsample_what):
@@ -75,9 +66,10 @@ class GroupDataset:
         for p in perm:
             y, g = self.y[self.i[p]], self.g[self.i[p]]
 
-            if (subsample_what == "groups"
-                and counts_g[self.nb_groups * int(y) + int(g)] < min_size) or\
-               (subsample_what == "classes" and counts_y[int(y)] < min_size):
+            if (
+                subsample_what == "groups"
+                and counts_g[self.nb_groups * int(y) + int(g)] < min_size
+            ) or (subsample_what == "classes" and counts_y[int(y)] < min_size):
                 counts_g[self.nb_groups * int(y) + int(g)] += 1
                 counts_y[int(y)] += 1
                 new_i.append(self.i[p])
@@ -104,22 +96,24 @@ class GroupDataset:
 
 
 class Waterbirds(GroupDataset):
-    def __init__(self, split, subsample_what=None, duplicates=None):
-        root = os.path.join(
-            os.environ['DATASETS_PATH'],
-            "waterbirds/waterbird_complete95_forest2water2/")
-        metadata = "metadata/metadata_waterbirds.csv"
+    def __init__(self, data_path, split, subsample_what=None, duplicates=None):
+        root = os.path.join(data_path, "waterbirds/waterbird_complete95_forest2water2/")
+        metadata = os.path.join(data_path,"metadata_waterbirds.csv")
 
-        transform = transforms.Compose([
-            transforms.Resize((
-                int(224 * (256 / 224)),
-                int(224 * (256 / 224)),)),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-        super().__init__(
-            split, root, metadata, transform, subsample_what, duplicates)
+        transform = transforms.Compose(
+            [
+                transforms.Resize(
+                    (
+                        int(224 * (256 / 224)),
+                        int(224 * (256 / 224)),
+                    )
+                ),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ]
+        )
+        super().__init__(split, root, metadata, transform, subsample_what, duplicates)
         self.data_type = "images"
 
     def transform(self, x):
@@ -127,20 +121,19 @@ class Waterbirds(GroupDataset):
 
 
 class CelebA(GroupDataset):
-    def __init__(self, split, subsample_what=None, duplicates=None):
-        root = os.path.join(
-            os.environ['DATASETS_PATH'],
-            "celeba/img_align_celeba/img_align_celeba/")
-        metadata = "metadata/metadata_celeba.csv"
+    def __init__(self, data_path, split, subsample_what=None, duplicates=None):
+        root = os.path.join(data_path, "celeba/img_align_celeba/")
+        metadata = os.path.join(data_path,"metadata_celeba.csv")
 
-        transform = transforms.Compose([
-            transforms.CenterCrop(178),
-            transforms.Resize(224),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-        super().__init__(
-            split, root, metadata, transform, subsample_what, duplicates)
+        transform = transforms.Compose(
+            [
+                transforms.CenterCrop(178),
+                transforms.Resize(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ]
+        )
+        super().__init__(split, root, metadata, transform, subsample_what, duplicates)
         self.data_type = "images"
 
     def transform(self, x):
@@ -148,59 +141,70 @@ class CelebA(GroupDataset):
 
 
 class MultiNLI(GroupDataset):
-    def __init__(self, split, subsample_what=None, duplicates=None):
-        root = os.path.join(
-            os.environ['DATASETS_PATH'], "multinli", "glue_data", "MNLI")
-        metadata = "metadata/metadata_multinli.csv"
+    def __init__(self, data_path, split, subsample_what=None, duplicates=None):
+        root = os.path.join(data_path, "multinli", "glue_data", "MNLI")
+        metadata = os.path.join(data_path, "metadata_multinli.csv")
 
         self.features_array = []
         for feature_file in [
-                "cached_train_bert-base-uncased_128_mnli",
-                "cached_dev_bert-base-uncased_128_mnli",
-                "cached_dev_bert-base-uncased_128_mnli-mm",
+            "cached_train_bert-base-uncased_128_mnli",
+            "cached_dev_bert-base-uncased_128_mnli",
+            "cached_dev_bert-base-uncased_128_mnli-mm",
         ]:
             features = torch.load(os.path.join(root, feature_file))
             self.features_array += features
 
         self.all_input_ids = torch.tensor(
-            [f.input_ids for f in self.features_array], dtype=torch.long)
+            [f.input_ids for f in self.features_array], dtype=torch.long
+        )
         self.all_input_masks = torch.tensor(
-            [f.input_mask for f in self.features_array], dtype=torch.long)
+            [f.input_mask for f in self.features_array], dtype=torch.long
+        )
         self.all_segment_ids = torch.tensor(
-            [f.segment_ids for f in self.features_array], dtype=torch.long)
+            [f.segment_ids for f in self.features_array], dtype=torch.long
+        )
         self.all_label_ids = torch.tensor(
-            [f.label_id for f in self.features_array], dtype=torch.long)
+            [f.label_id for f in self.features_array], dtype=torch.long
+        )
 
-        self.x_array = torch.stack((
-            self.all_input_ids,
-            self.all_input_masks,
-            self.all_segment_ids), dim=2)
+        self.x_array = torch.stack(
+            (self.all_input_ids, self.all_input_masks, self.all_segment_ids), dim=2
+        )
 
         self.data_type = "text"
 
         super().__init__(
-            split, "", metadata, self.transform, subsample_what, duplicates)
+            split, "", metadata, self.transform, subsample_what, duplicates
+        )
 
     def transform(self, i):
         return self.x_array[int(i)]
 
 
 class CivilComments(GroupDataset):
-    def __init__(self, split, subsample_what=None, duplicates=None,
-                 granularity="coarse"):
-        metadata = "metadata/metadata_civilcomments_{}.csv".format(granularity)
+    def __init__(
+        self,
+        data_path,
+        split,
+        subsample_what=None,
+        duplicates=None,
+        granularity="coarse",
+    ):
+        metadata = os.path.join(data_path,"metadata_civilcomments_{}.csv".format(granularity))
 
         text = pd.read_csv(
             os.path.join(
-                os.environ['DATASETS_PATH'],
-                "civilcomments/civilcomments_{}.csv".format(granularity)))
+                data_path, "civilcomments/civilcomments_{}.csv".format(granularity)
+            )
+        )
 
         self.text_array = list(text["comment_text"])
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         self.data_type = "text"
 
         super().__init__(
-            split, "", metadata, self.transform, subsample_what, duplicates)
+            split, "", metadata, self.transform, subsample_what, duplicates
+        )
 
     def transform(self, idx):
         text = self.text_array[int(idx)]
@@ -210,31 +214,40 @@ class CivilComments(GroupDataset):
             padding="max_length",
             truncation=True,
             max_length=220,
-            return_tensors="pt")
+            return_tensors="pt",
+        )
 
-        return torch.squeeze(torch.stack((
-            tokens["input_ids"],
-            tokens["attention_mask"],
-            tokens["token_type_ids"]),
-            dim=2), dim=0)
+        return torch.squeeze(
+            torch.stack(
+                (
+                    tokens["input_ids"],
+                    tokens["attention_mask"],
+                    tokens["token_type_ids"],
+                ),
+                dim=2,
+            ),
+            dim=0,
+        )
 
 
 class CivilCommentsFine(CivilComments):
-    def __init__(self, split, subsample_what=None, duplicates=None):
-        super().__init__(split, subsample_what, duplicates, "fine")
+    def __init__(self, data_path, split, subsample_what=None, duplicates=None):
+        super().__init__(split, data_path, subsample_what, duplicates, "fine")
+
 
 class Toy(GroupDataset):
-    def __init__(self, split, subsample_what=None, duplicates=None):
+    def __init__(self, data_path, split, subsample_what=None, duplicates=None):
         self.data_type = "toy"
         n_samples = 1000
         dim_noise = 1200
 
         self.i, self.x, self.y, self.g = self.make_dataset(
-                                                n_samples=n_samples,
-                                                dim_noise=dim_noise,
-                                                core_cor=1.0,
-                                                spu_cor=0.8,
-                                                train=(split=="tr"))
+            n_samples=n_samples,
+            dim_noise=dim_noise,
+            core_cor=1.0,
+            spu_cor=0.8,
+            train=(split == "tr"),
+        )
         self.count_groups()
 
         if subsample_what is not None:
@@ -242,15 +255,20 @@ class Toy(GroupDataset):
 
         if duplicates is not None:
             self.duplicate_(duplicates)
-    
+
     def transform(self, x):
         return torch.tensor(x)
-    
-    def make_dataset(self, n_samples=1000, dim_noise=1200, blob_std=0.15,
-                     core_cor=1.0, spu_cor=0.8, train=True):
-        X = make_blobs(
-            n_samples=n_samples, centers=1, cluster_std=[blob_std]
-        )[0]
+
+    def make_dataset(
+        self,
+        n_samples=1000,
+        dim_noise=1200,
+        blob_std=0.15,
+        core_cor=1.0,
+        spu_cor=0.8,
+        train=True,
+    ):
+        X = make_blobs(n_samples=n_samples, centers=1, cluster_std=[blob_std])[0]
         X -= X.mean(0, keepdims=True) + np.array([[1.0, 1.0]])
         y = np.array([-1] * (n_samples // 2) + [1] * (n_samples // 2))
         g = np.ones((n_samples))
@@ -294,25 +312,30 @@ class Toy(GroupDataset):
         return i, X, y, g
 
 
-def get_loaders(dataset_name, batch_size, method="erm", duplicates=None):
+def get_loaders(data_path, dataset_name, batch_size, method="erm", duplicates=None):
     Dataset = {
         "waterbirds": Waterbirds,
         "celeba": CelebA,
         "multinli": MultiNLI,
-        "civilcomments":
-        CivilCommentsFine if method in ("subg", "rwg") else CivilComments,
+        "civilcomments": CivilCommentsFine
+        if method in ("subg", "rwg")
+        else CivilComments,
         "toy": Toy,
     }[dataset_name]
 
     def dl(dataset, bs, shuffle, weights):
         if weights is not None:
-            sampler = torch.utils.data.WeightedRandomSampler(
-                weights, len(weights))
+            sampler = torch.utils.data.WeightedRandomSampler(weights, len(weights))
         else:
             sampler = None
         return DataLoader(
-            dataset, batch_size=bs, shuffle=shuffle, sampler=sampler,
-            num_workers=4, pin_memory=True)
+            dataset,
+            batch_size=bs,
+            shuffle=shuffle,
+            sampler=sampler,
+            num_workers=4,
+            pin_memory=True,
+        )
 
     if method == "subg":
         subsample_what = "groups"
@@ -321,7 +344,7 @@ def get_loaders(dataset_name, batch_size, method="erm", duplicates=None):
     else:
         subsample_what = None
 
-    dataset_tr = Dataset("tr", subsample_what, duplicates)
+    dataset_tr = Dataset(data_path, "tr", subsample_what, duplicates)
 
     if method == "rwg" or method == "dro":
         weights_tr = dataset_tr.wg
@@ -332,6 +355,6 @@ def get_loaders(dataset_name, batch_size, method="erm", duplicates=None):
 
     return {
         "tr": dl(dataset_tr, batch_size, weights_tr is None, weights_tr),
-        "va": dl(Dataset("va", None), 128, False, None),
-        "te": dl(Dataset("te", None), 128, False, None)
+        "va": dl(Dataset(data_path, "va", None), 128, False, None),
+        "te": dl(Dataset(data_path, "te", None), 128, False, None),
     }

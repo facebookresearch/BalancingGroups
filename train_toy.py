@@ -17,7 +17,7 @@ def product_dict(**kwargs):
 if __name__ == "__main__":
     args = parse_args()
 
-    executor = submitit.SlurmExecutor(folder=os.environ['SLURM_PATH'])
+    executor = submitit.SlurmExecutor(folder=args['slurm_output_dir'])
     executor.update_parameters(
         time=args["max_time"],
         gpus_per_node=1,
