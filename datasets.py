@@ -232,7 +232,7 @@ class CivilComments(GroupDataset):
 
 class CivilCommentsFine(CivilComments):
     def __init__(self, data_path, split, subsample_what=None, duplicates=None):
-        super().__init__(split, data_path, subsample_what, duplicates, "fine")
+        super().__init__(data_path, split, subsample_what, duplicates, "fine")
 
 
 class Toy(GroupDataset):
