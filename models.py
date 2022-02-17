@@ -265,11 +265,11 @@ class JTT(ERM):
         else:
             self.eval()
             if predictions.squeeze().ndim == 1:
-                predictions = (predictions > 0).cpu().eq(y).float()
+                wrong_predictions = (predictions > 0).cpu().ne(y).float()
             else:
-                predictions = predictions.argmax(1).cpu().eq(y).float()
+                wrong_predictions = predictions.argmax(1).cpu().ne(y).float()
 
-            self.weights[i] += predictions.detach() * (self.hparams["up"] - 1)
+            self.weights[i] += wrong_predictions.detach() * (self.hparams["up"] - 1)
             self.train()
             loss_value = None
 
