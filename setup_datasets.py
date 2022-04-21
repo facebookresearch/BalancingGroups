@@ -242,4 +242,4 @@ if __name__ == "__main__":
 
     if args.download:
         download_datasets(args.data_path, args.datasets)
-    generate_metadata(args.data_path)
+    generate_metadata(args.data_path, args.datasets)
