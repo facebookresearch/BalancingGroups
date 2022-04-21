@@ -36,9 +36,54 @@ def download_and_extract(url, dst, remove=True):
         os.remove(dst)
 
 
-def download_datasets(data_path):
+def download_datasets(data_path, datasets=['celeba', 'waterbirds', 'civilcomments', 'multinli']):
     os.makedirs(data_path, exist_ok=True)
+    dataset_downloaders = {
+        'celeba': download_celeba,
+        'waterbirds': download_waterbirds,
+        'civilcomments': download_civilcomments,
+        'multinli': download_multinli,
+    }
+    for dataset in datasets:
+        dataset_downloaders[dataset](data_path)
 
+def download_civilcomments(data_path):
+    logging.info("Downloading CivilComments")
+    civilcomments_dir = os.path.join(data_path, "civilcomments")
+    os.makedirs(civilcomments_dir, exist_ok=True)
+    download_and_extract(
+        "https://worksheets.codalab.org/rest/bundles/0x8cd3de0634154aeaad2ee6eb96723c6e/contents/blob/",
+        os.path.join(civilcomments_dir, "civilcomments.tar.gz"),
+    )
+
+def download_multinli(data_path):
+    logging.info("Downloading MultiNLI")
+    multinli_dir = os.path.join(data_path, "multinli")
+    glue_dir = os.path.join(multinli_dir, "glue_data/MNLI/")
+    os.makedirs(glue_dir, exist_ok=True)
+    multinli_tar = os.path.join(glue_dir, "multinli_bert_features.tar.gz")
+    download_and_extract(
+        "https://nlp.stanford.edu/data/dro/multinli_bert_features.tar.gz",
+        multinli_tar,
+    )
+    os.makedirs(os.path.join(multinli_dir, "data"), exist_ok=True)
+    download_and_extract(
+        "https://raw.githubusercontent.com/kohpangwei/group_DRO/master/dataset_metadata/multinli/metadata_random.csv",
+        os.path.join(multinli_dir, "data", "metadata_random.csv"),
+        remove=False
+    )
+
+def download_waterbirds(data_path):
+    logging.info("Downloading Waterbirds")
+    water_birds_dir = os.path.join(data_path, "waterbirds")
+    os.makedirs(water_birds_dir, exist_ok=True)
+    water_birds_dir_tar = os.path.join(water_birds_dir, "waterbirds.tar.gz")
+    download_and_extract(
+        "https://nlp.stanford.edu/data/dro/waterbird_complete95_forest2water2.tar.gz",
+        water_birds_dir_tar,
+    )
+
+def download_celeba(data_path):
     logging.info("Downloading CelebA")
     celeba_dir = os.path.join(data_path, "celeba")
     os.makedirs(celeba_dir, exist_ok=True)
@@ -57,38 +102,16 @@ def download_datasets(data_path):
         remove=False
     )
 
-    logging.info("Downloading Waterbirds")
-    water_birds_dir = os.path.join(data_path, "waterbirds")
-    os.makedirs(water_birds_dir, exist_ok=True)
-    water_birds_dir_tar = os.path.join(water_birds_dir, "waterbirds.tar.gz")
-    download_and_extract(
-        "https://nlp.stanford.edu/data/dro/waterbird_complete95_forest2water2.tar.gz",
-        water_birds_dir_tar,
-    )
+def generate_metadata(data_path, datasets=['celeba', 'waterbirds', 'civilcomments', 'multinli']):
+    dataset_metadata_generators = {
+        'celeba': generate_metadata_celeba,
+        'waterbirds': generate_metadata_waterbirds,
+        'civilcomments': generate_metadata_civilcomments,
+        'multinli': generate_metadata_multinli,
+    }
+    for dataset in datasets:
+        dataset_metadata_generators[dataset](data_path)
 
-    logging.info("Downloading MultiNLI")
-    multinli_dir = os.path.join(data_path, "multinli")
-    glue_dir = os.path.join(multinli_dir, "glue_data/MNLI/")
-    os.makedirs(glue_dir, exist_ok=True)
-    multinli_tar = os.path.join(glue_dir, "multinli_bert_features.tar.gz")
-    download_and_extract(
-        "https://nlp.stanford.edu/data/dro/multinli_bert_features.tar.gz",
-        multinli_tar,
-    )
-    os.makedirs(os.path.join(multinli_dir, "data"), exist_ok=True)
-    download_and_extract(
-        "https://raw.githubusercontent.com/kohpangwei/group_DRO/master/dataset_metadata/multinli/metadata_random.csv",
-        os.path.join(multinli_dir, "data", "metadata_random.csv"),
-        remove=False
-    )
-
-    logging.info("Downloading CivilComments")
-    civilcomments_dir = os.path.join(data_path, "civilcomments")
-    os.makedirs(civilcomments_dir, exist_ok=True)
-    download_and_extract(
-        "https://worksheets.codalab.org/rest/bundles/0x8cd3de0634154aeaad2ee6eb96723c6e/contents/blob/",
-        os.path.join(civilcomments_dir, "civilcomments.tar.gz"),
-    )
 
 
 def generate_metadata_celeba(data_path):
@@ -198,6 +221,13 @@ def generate_metadata_multinli(data_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize repo with datasets")
     parser.add_argument(
+        "datasets",
+        nargs="+",
+        default=['celeba', 'waterbirds', 'civilcomments', 'multinli'],
+        type=str,
+        help="Which datasets to download and/or generate metadata for",
+    )
+    parser.add_argument(
         "--data_path",
         default="data",
         type=str,
@@ -211,8 +241,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.download:
-        download_datasets(args.data_path)
-    generate_metadata_celeba(args.data_path)
-    generate_metadata_waterbirds(args.data_path)
-    generate_metadata_civilcomments(args.data_path)
-    generate_metadata_multinli(args.data_path)
+        download_datasets(args.data_path, args.datasets)
+    generate_metadata(args.data_path)
