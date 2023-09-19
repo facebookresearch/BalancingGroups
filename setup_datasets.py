@@ -221,7 +221,7 @@ def generate_metadata_multinli(data_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize repo with datasets")
     parser.add_argument(
-        "datasets",
+        "--datasets",
         nargs="+",
         default=['celeba', 'waterbirds', 'civilcomments', 'multinli'],
         type=str,
